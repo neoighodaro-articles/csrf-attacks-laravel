@@ -15,7 +15,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password','balance'
+        'name', 'email', 'password', 'balance'
     ];
 
     /**
@@ -26,4 +26,14 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    public function charge(int $amount)
+    {
+        return $this->update(['balance' => $this->balance - $amount]);
+    }
+
+    public function grant(int $amount)
+    {
+        return $this->update(['balance' => $this->balance + $amount]);
+    }
 }

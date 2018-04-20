@@ -2,38 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use App\User;
+use Illuminate\Http\Request;
 
 class SendMoneyController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function send(Request $request)
     {
-        // validate the request
-        $validate = $request->validate([
+        $data = $request->validate([
             'email' => 'required|email',
             'amount' => 'required|numeric'
         ]);
 
-        //  check if user is logged in and then handle request
-        if (Auth::check()) {
-            $sender = Auth::user();
+        $sender = auth()->user();
+        $recipient = User::where('email', $data['email'])->first();
 
-            $recipient = User::where('email', $request->email)->first();
+        $sender->charge($data['amount']);
+        $recipient->grant($data['amount']);
 
-            $sender->update([
-                'balance' => $sender->balance - $request->amount
-            ]);
-
-            $recipient->update([
-                'balance' => $recipient->balance + $request->amount
-            ]);
-        
-            return redirect()->action('HomeController@index')->with(['status' => "$$request->amount sent to $recipient->name ($recipient->email)"]);
-        }
-
-        // throw error here
-        return back()->with(['error' => 'Sorry money could not be sent']);
+        return redirect()->action('HomeController@index')
+            ->withStatus("${$data['amount']} sent to {$recipient->name}");
     }
 }
